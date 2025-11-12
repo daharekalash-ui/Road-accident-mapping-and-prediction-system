@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeRoute - Professional Road Safety Monitor</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Leaflet Heatmap -->
+    <script src="https://cdn.jsdelivr.net/gh/Leaflet/Leaflet.heat@gh-pages/dist/leaflet-heat.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #0a0e27 100%);
+            color: white;
+            overflow-x: hidden;
+        }
+
+        .animated-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #050816;
+            z-index: -1;
+        }
+
+        .top-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 80px;
+            background: rgba(10, 14, 39, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 2px solid rgba(0, 212, 255, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 30px;
+            z-index: 1000;
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .logo-icon {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #06ffa5 0%, #00d4ff 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .brand-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00d4ff 0%, #ff006e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 2px;
+        }
+
+        .tagline {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: -5px;
+        }
+
+        .stats-section {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 12px;
+            padding: 10px 20px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .stat-icon {
+            font-size: 1.8rem;
+        }
+
+        .stat-content h3 {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #00d4ff;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .stat-content p {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 2px;
+        }
+
+        .control-panel {
+            position: fixed;
+            left: 20px;
+            top: 100px;
+            width: 340px;
+            background: rgba(10, 14, 39, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            z-index: 999;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+        }
+
+        .control-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .control-panel::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+        }
+
+        .control-panel::-webkit-scrollbar-thumb {
+            background: #00d4ff;
+            border-radius: 10px;
+        }
+
+        .panel-section {
+            margin-bottom: 25px;
+        }
+
+        .panel-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #00d4ff;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .location-input-wrapper {
+            position: relative;
+            margin-bottom: 15px;
+            z-index: 2000;
+        }
+
+        .location-input {
+            width: 100%;
+            padding: 12px 45px 12px 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 8px;
+            color: white;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .location-input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+        }
+
+        .location-input::placeholder {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .location-btn {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 212, 255, 0.2);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            color: #00d4ff;
+            font-size: 1rem;
+            cursor: pointer;
+            padding: 8px 10px;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .location-btn:hover {
+            background: rgba(0, 212, 255, 0.3);
+        }
+
+        .suggestions-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(10, 14, 39, 0.98);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 212, 255, 0.5);
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            max-height: 350px;
+            overflow-y: auto;
+            z-index: 2000;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            display: none;
+            margin-top: -1px;
+        }
+
+        .suggestions-dropdown.active {
+            display: block;
+        }
+
+        .suggestions-dropdown::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .suggestions-dropdown::-webkit-scrollbar-thumb {
+            background: #00d4ff;
+            border-radius: 3px;
+        }
+
+        .suggestion-item {
+            padding: 14px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(0, 212, 255, 0.1);
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .suggestion-item:hover {
+            background: rgba(0, 212, 255, 0.15);
+            border-left: 3px solid #00d4ff;
+            padding-left: 13px;
+        }
+
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .suggestion-icon {
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+
+        .suggestion-details {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .suggestion-main {
+            font-weight: 600;
+            color: #00d4ff;
+            font-size: 0.9rem;
+            word-break: break-word;
+        }
+
+        .suggestion-sub {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 3px;
+            word-break: break-word;
+        }
+
+        .suggestion-distance {
+            font-size: 0.75rem;
+            color: rgba(0, 212, 255, 0.7);
+            margin-top: 2px;
+            font-weight: 500;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #06ffa5 0%, #00d4ff 100%);
+            color: #0a0e27;
+            box-shadow: 0 4px 15px rgba(6, 255, 165, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(6, 255, 165, 0.5);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(0, 212, 255, 0.2);
+            border-color: #00d4ff;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff006e 0%, #ff7e5f 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(255, 0, 110, 0.3);
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(255, 0, 110, 0.5);
+        }
+
+        .legend {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            font-size: 0.85rem;
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        #map {
+            position: fixed;
+            top: 80px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+        }
+
+        .route-info {
+            position: fixed;
+            right: 20px;
+            bottom: 20px;
+            width: 420px;
+            background: rgba(10, 14, 39, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 15px;
+            padding: 20px;
+            z-index: 999;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            display: none;
+            animation: slideInUp 0.5s ease;
+        }
+
+        .route-info.active {
+            display: block;
+        }
+
+        @keyframes slideInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .route-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #00d4ff;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .route-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+        }
+
+        .route-stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .route-stat-icon {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+        }
+
+        .route-stat-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #00d4ff;
+            font-family: 'Orbitron', sans-serif;
+        }
+
+        .route-stat-label {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 4px;
+        }
+
+        .alert-container {
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            width: 350px;
+            z-index: 1001;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
+        }
+
+        .alert {
+            background: rgba(10, 14, 39, 0.95);
+            backdrop-filter: blur(10px);
+            border-left: 4px solid;
+            border-radius: 8px;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            animation: slideInRight 0.5s ease;
+            position: relative;
+        }
+
+        @keyframes slideInRight {
+            from {
+                opacity: 0;
+                transform: translateX(100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .alert-success {
+            border-color: #06ffa5;
+        }
+
+        .alert-warning {
+            border-color: #ffbe0b;
+        }
+
+        .alert-danger {
+            border-color: #ff006e;
+        }
+
+        .alert-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            opacity: 0.6;
+        }
+
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #050816;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .loading.active {
+            display: flex;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(0, 212, 255, 0.2);
+            border-top-color: #00d4ff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .loading-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            color: #00d4ff;
+            letter-spacing: 2px;
+        }
+
+        .leaflet-popup-content-wrapper {
+            background: rgba(10, 14, 39, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            border-radius: 10px;
+            color: white;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .leaflet-popup-tip {
+            background: rgba(10, 14, 39, 0.95);
+        }
+
+        @media (max-width: 768px) {
+            .control-panel {
+                width: 90%;
+                left: 5%;
+                right: 5%;
+            }
+
+            .route-info {
+                width: 90%;
+                left: 5%;
+                right: 5%;
+            }
+
+            .alert-container {
+                width: 90%;
+                right: 5%;
+            }
+
+            .stats-section {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="animated-bg"></div>
+
+    <div id="loading" class="loading">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">INITIALIZING SAFEROUTE...</div>
+    </div>
+
+    <div class="top-header">
+        <div class="logo-section">
+            <div class="logo-icon">🛡️</div>
+            <div>
+                <div class="brand-name">SAFEROUTE</div>
+                <div class="tagline">INTELLIGENT ROAD SAFETY MONITORING</div>
+            </div>
+        </div>
+
+        <div class="stats-section">
+            <div class="stat-card">
+                <div class="stat-icon">📍</div>
+                <div class="stat-content">
+                    <h3 id="gpsStatus">ACQUIRING</h3>
+                    <p>GPS Status</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">⚠️</div>
+                <div class="stat-content">
+                    <h3 id="zoneCount">70</h3>
+                    <p>Danger Zones</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-content">
+                    <h3 id="nearestDistance">--</h3>
+                    <p>Nearest Zone</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <div class="panel-section">
+            <div class="panel-title">ROUTE PLANNING</div>
+            <div class="location-input-wrapper">
+                <input type="text" id="pickupInput" class="location-input" placeholder="Pickup location..." autocomplete="off">
+                <button class="location-btn" onclick="useMyLocation('pickup')" title="Use current location">📍</button>
+                <div id="pickupSuggestions" class="suggestions-dropdown"></div>
+            </div>
+
+            <div class="location-input-wrapper">
+                <input type="text" id="dropInput" class="location-input" placeholder="Destination location..." autocomplete="off">
+                <button class="location-btn" onclick="useMyLocation('drop')" title="Use current location">📍</button>
+                <div id="dropSuggestions" class="suggestions-dropdown"></div>
+            </div>
+
+            <button class="btn btn-primary" onclick="planRoute()">🗺️ FIND SAFE ROUTE</button>
+            <button class="btn btn-danger" onclick="clearRoute()">✕ CLEAR ROUTE</button>
+        </div>
+
+        <div class="panel-section">
+            <div class="panel-title">MAP CONTROLS</div>
+            <button class="btn btn-secondary" onclick="recenterMap()">📍 CENTER ON ME</button>
+            <button class="btn btn-secondary" onclick="toggleHeatmap()"><span id="heatmapBtnText">HIDE HEATMAP</span></button>
+            <button class="btn btn-secondary" onclick="clearAlerts()">🔔 CLEAR ALERTS</button>
+        </div>
+
+        <div class="panel-section">
+            <div class="panel-title">LEGEND</div>
+            <div class="legend">
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ff0000;"></div>
+                    <span>HIGH RISK</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #ffaa00;"></div>
+                    <span>MEDIUM RISK</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #00ff00;"></div>
+                    <span>LOW RISK</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background: #00d4ff;"></div>
+                    <span>YOUR LOCATION</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="map"></div>
+
+    <div id="routeInfo" class="route-info">
+        <div class="route-title">ROUTE ANALYSIS</div>
+        <div id="routeDetails"></div>
+    </div>
+
+    <div id="alertContainer" class="alert-container"></div>
+
+    <script>
+        let map, userMarker, heatmapLayer, accidentMarkers = [], pickupCoords = null, dropCoords = null;
+        let alertShown = {}, watchId = null, userPosition = null, routeLayer = null;
+        let pickupMarker = null, dropMarker = null, routeAccidentZones = [];
+
+        const NAGPUR_CENTER = [21.1458, 79.0882];
+
+        // Enhanced list of famous locations in Nagpur
+        const nagpurLocations = [
+            { name: "GH Raisoni College of Engineering", lat: 21.1650, lng: 79.0840, type: "college", category: "Education" },
+            { name: "GH Raisoni College Campus (North)", lat: 21.1675, lng: 79.0865, type: "college", category: "Education" },
+            { name: "GH Raisoni College Campus (South)", lat: 21.1620, lng: 79.0815, type: "college", category: "Education" },
+            { name: "Visvesvaraya National Institute of Technology", lat: 21.1350, lng: 79.0580, type: "college", category: "Education" },
+            { name: "Nagpur Railway Station", lat: 21.1458, lng: 79.0850, type: "station", category: "Transport" },
+            { name: "Ambazari Lake", lat: 21.1400, lng: 79.0950, type: "landmark", category: "Landmark" },
+            { name: "Raipur Banaspati", lat: 21.1500, lng: 79.0800, type: "landmark", category: "Landmark" },
+            { name: "Seminary Hills", lat: 21.1550, lng: 79.0750, type: "landmark", category: "Landmark" },
+            { name: "Zero Mile", lat: 21.1458, lng: 79.0882, type: "landmark", category: "Landmark" },
+            { name: "Mangalhat Hill", lat: 21.1350, lng: 79.1050, type: "landmark", category: "Landmark" },
+            { name: "Futala Lake", lat: 21.1200, lng: 79.0800, type: "landmark", category: "Landmark" },
+            { name: "Deekshabhoomi", lat: 21.1680, lng: 79.1200, type: "landmark", category: "Landmark" },
+            { name: "Ambazari Bus Stand", lat: 21.1420, lng: 79.1020, type: "station", category: "Transport" },
+            { name: "Nagpur IT Park", lat: 21.1580, lng: 79.0950, type: "commercial", category: "Business" },
+            { name: "Nagpur Airport", lat: 21.0945, lng: 79.0467, type: "station", category: "Transport" },
+            { name: "Tekdi", lat: 21.1750, lng: 79.0900, type: "landmark", category: "Landmark" },
+            { name: "Citadel", lat: 21.1500, lng: 79.0950, type: "landmark", category: "Landmark" },
+            { name: "Ravi Bhavan", lat: 21.1470, lng: 79.0780, type: "landmark", category: "Landmark" },
+            { name: "Sitabuldi Fort", lat: 21.1750, lng: 79.0850, type: "landmark", category: "Landmark" },
+            { name: "Nagpur University", lat: 21.0900, lng: 79.1100, type: "college", category: "Education" },
+            { name: "Rashtrasant Tukdoji Maharaj Park", lat: 21.1420, lng: 79.1180, type: "landmark", category: "Landmark" },
+            { name: "Dhantoli", lat: 21.1650, lng: 79.0920, type: "area", category: "Area" },
+            { name: "Sadar", lat: 21.1550, lng: 79.0820, type: "area", category: "Area" },
+            { name: "Ramdaspeth", lat: 21.1450, lng: 79.0950, type: "area", category: "Area" },
+            { name: "Itwari", lat: 21.1680, lng: 79.0780, type: "area", category: "Area" },
+            { name: "Nagpur Central Hospital", lat: 21.1420, lng: 79.0880, type: "hospital", category: "Healthcare" },
+            { name: "Government Medical College", lat: 21.1560, lng: 79.0950, type: "college", category: "Education" }
+        ];
+
+        const accidentSpots = [
+            [21.1458, 79.0882, 1.0],
+            [21.1466, 79.0882, 0.95],
+            [21.1498, 79.0862, 0.9],
+            [21.1517, 79.0894, 0.95],
+            [21.1390, 79.0900, 0.9],
+            [21.1456, 79.0758, 0.85],
+            [21.1544, 79.0729, 0.9],
+            [21.1658, 79.0876, 0.95],
+            [21.1389, 79.0560, 0.85],
+            [21.1278, 79.0654, 0.9],
+            [21.1234, 79.1234, 0.85],
+            [21.1189, 79.1345, 0.8],
+            [21.1145, 79.1456, 0.75],
+            [21.1350, 79.1118, 0.9],
+            [21.1450, 79.1324, 0.85],
+            [21.1556, 79.1456, 0.8],
+            [21.1648, 79.0996, 0.85],
+            [21.1762, 79.0742, 0.9],
+            [21.1888, 79.0880, 0.85],
+            [21.2012, 79.0912, 0.75],
+            [21.1185, 79.0626, 0.8],
+            [21.1070, 79.0724, 0.75],
+            [21.1022, 79.0843, 0.8],
+            [21.1158, 79.0998, 0.75],
+            [21.0745, 79.1024, 0.7],
+            [21.0634, 79.0876, 0.7],
+            [21.0634, 79.1156, 0.65],
+            [21.1024, 79.1345, 0.7],
+            [21.0812, 79.0634, 0.75],
+            [21.0890, 79.0345, 0.7],
+            [21.0678, 79.0456, 0.65],
+            [21.1345, 79.0678, 0.75],
+            [21.1456, 79.0934, 0.7],
+            [21.1234, 79.0856, 0.75],
+            [21.1567, 79.1023, 0.7],
+            [21.1689, 79.1156, 0.7],
+            [21.1567, 79.1289, 0.65],
+            [21.1345, 79.1678, 0.65],
+            [21.1567, 79.0456, 0.7],
+            [21.1689, 79.0567, 0.75],
+            [21.1234, 79.0445, 0.7],
+            [21.1456, 79.0534, 0.65],
+            [21.0958, 79.0512, 0.7],
+            [21.0856, 79.0912, 0.7],
+            [21.0856, 79.0567, 0.65],
+            [21.1445, 79.1156, 0.75],
+            [21.1120, 79.0456, 0.75],
+            [21.1123, 79.0789, 0.7],
+            [21.1778, 79.0634, 0.6],
+            [21.0912, 79.1123, 0.6],
+            [21.0734, 79.0789, 0.6],
+            [21.1890, 79.0645, 0.6],
+            [21.1023, 79.0912, 0.6],
+            [21.0845, 79.1234, 0.6],
+            [21.1234, 79.1445, 0.6],
+            [21.1567, 79.0789, 0.65],
+            [21.1234, 79.1023, 0.65],
+            [21.1678, 79.0912, 0.65],
+            [21.0912, 79.0878, 0.65],
+            [21.1445, 79.0645, 0.65],
+            [21.1089, 79.1156, 0.65],
+            [21.1756, 79.1089, 0.65],
+            [21.0734, 79.0912, 0.65],
+            [21.1890, 79.0734, 0.65],
+            [21.1023, 79.0634, 0.65],
+            [21.1990, 79.0878, 0.65],
+            [21.1123, 79.1567, 0.65],
+            [21.0512, 79.0734, 0.65],
+            [21.1778, 79.1390, 0.65],
+            [21.0456, 79.1012, 0.65],
+            [21.1689, 79.1234, 0.6]
+        ];
+
+        const heatmapData = accidentSpots.map(spot => [spot[0], spot[1], spot[2]]);
+
+        function initMap() {
+            document.getElementById('loading').classList.add('active');
+
+            map = L.map('map', {
+                zoomControl: true,
+                attributionControl: false
+            }).setView(NAGPUR_CENTER, 13);
+
+            L.tileLayer('https://s.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png', {
+                maxZoom: 19,
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            heatmapLayer = L.heatLayer(heatmapData, {
+                radius: 35,
+                blur: 30,
+                maxZoom: 17,
+                max: 1.0,
+                minOpacity: 0.3,
+                gradient: {
+                    0.0: '#06ffa5',
+                    0.3: '#00d4ff',
+                    0.5: '#ffbe0b',
+                    0.7: '#ff7e5f',
+                    1.0: '#ff006e'
+                }
+            }).addTo(map);
+
+            addAccidentMarkers();
+            trackUserLocation();
+            setupAutocomplete();
+        }
+
+        function setupAutocomplete() {
+            const pickupInput = document.getElementById('pickupInput');
+            const dropInput = document.getElementById('dropInput');
+
+            pickupInput.addEventListener('input', (e) => handleInput(e, 'pickup'));
+            dropInput.addEventListener('input', (e) => handleInput(e, 'drop'));
+
+            document.addEventListener('click', (e) => {
+                if (!pickupInput.contains(e.target) && !document.getElementById('pickupSuggestions').contains(e.target)) {
+                    document.getElementById('pickupSuggestions').classList.remove('active');
+                }
+                if (!dropInput.contains(e.target) && !document.getElementById('dropSuggestions').contains(e.target)) {
+                    document.getElementById('dropSuggestions').classList.remove('active');
+                }
+            });
+        }
+
+        function handleInput(e, type) {
+            const value = e.target.value.trim();
+            const dropdown = document.getElementById(type + 'Suggestions');
+
+            if (value.length < 1) {
+                dropdown.classList.remove('active');
+                return;
+            }
+
+            const results = searchLocations(value);
+            displaySuggestions(results, dropdown, type);
+        }
+
+        function searchLocations(query) {
+            query = query.toLowerCase();
+
+            // Search in local database first (Nagpur locations)
+            const localResults = nagpurLocations.filter(loc => 
+                loc.name.toLowerCase().includes(query) ||
+                loc.category.toLowerCase().includes(query)
+            );
+
+            // Sort by relevance (exact match first, then partial)
+            localResults.sort((a, b) => {
+                const aStarts = a.name.toLowerCase().startsWith(query);
+                const bStarts = b.name.toLowerCase().startsWith(query);
+                if (aStarts && !bStarts) return -1;
+                if (!aStarts && bStarts) return 1;
+                return 0;
+            });
+
+            return localResults.slice(0, 15); // Return top 15 results
+        }
+
+        function displaySuggestions(results, dropdown, type) {
+            dropdown.innerHTML = '';
+
+            if (!results || results.length === 0) {
+                dropdown.innerHTML = '<div class="suggestion-item"><span style="color: rgba(255,255,255,0.5)">❌ No locations found in Nagpur</span></div>';
+                dropdown.classList.add('active');
+                return;
+            }
+
+            results.forEach(result => {
+                const item = document.createElement('div');
+                item.className = 'suggestion-item';
+
+                // Get icon based on type
+                let icon = '📍';
+                if (result.type === 'college') icon = '🎓';
+                else if (result.type === 'station') icon = '🚉';
+                else if (result.type === 'hospital') icon = '🏥';
+                else if (result.type === 'commercial') icon = '🏢';
+                else if (result.type === 'landmark') icon = '🏛️';
+
+                item.innerHTML = `
+                    <div class="suggestion-icon">${icon}</div>
+                    <div class="suggestion-details">
+                        <div class="suggestion-main">${result.name}</div>
+                        <div class="suggestion-sub">${result.category}</div>
+                        <div class="suggestion-distance">📍 Nagpur</div>
+                    </div>
+                `;
+
+                item.onclick = () => selectLocation(result, type, dropdown);
+                dropdown.appendChild(item);
+            });
+
+            dropdown.classList.add('active');
+        }
+
+        function selectLocation(result, type, dropdown) {
+            const coords = [result.lat, result.lng];
+            const name = result.name;
+
+            if (type === 'pickup') {
+                pickupCoords = coords;
+                document.getElementById('pickupInput').value = name;
+            } else {
+                dropCoords = coords;
+                document.getElementById('dropInput').value = name;
+            }
+
+            dropdown.classList.remove('active');
+            showAlert(`✅ ${name} selected!`, 'success');
+        }
+
+        function useMyLocation(type) {
+            if (!userPosition) {
+                showAlert('Getting GPS location...', 'warning');
+                return;
+            }
+
+            if (type === 'pickup') {
+                pickupCoords = [...userPosition];
+                document.getElementById('pickupInput').value = 'My Location';
+            } else {
+                dropCoords = [...userPosition];
+                document.getElementById('dropInput').value = 'My Location';
+            }
+
+            showAlert(`${type === 'pickup' ? 'Pickup' : 'Destination'} set to your location`, 'success');
+        }
+
+        function addAccidentMarkers() {
+            accidentSpots.forEach((spot, index) => {
+                const intensity = spot[2];
+                let color = '#06ffa5';
+                let riskLevel = 'Low';
+
+                if (intensity > 0.8) {
+                    color = '#ff006e';
+                    riskLevel = 'HIGH';
+                } else if (intensity > 0.6) {
+                    color = '#ffbe0b';
+                    riskLevel = 'MEDIUM';
+                }
+
+                const marker = L.circleMarker([spot[0], spot[1]], {
+                    radius: 6,
+                    fillColor: color,
+                    color: '#fff',
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.8
+                }).addTo(map);
+
+                marker.bindPopup(`<strong style="color:${color}">DANGER ZONE</strong><br>Risk: ${riskLevel}<br>Intensity: ${(intensity * 100).toFixed(0)}%`);
+                accidentMarkers.push(marker);
+            });
+
+            document.getElementById('zoneCount').textContent = accidentSpots.length;
+        }
+
+        function trackUserLocation() {
+            if (!navigator.geolocation) {
+                showAlert('GPS not supported', 'danger');
+                document.getElementById('loading').classList.remove('active');
+                return;
+            }
+
+            watchId = navigator.geolocation.watchPosition(
+                (pos) => {
+                    document.getElementById('loading').classList.remove('active');
+                    const newPos = [pos.coords.latitude, pos.coords.longitude];
+
+                    if (userPosition && map.distance(userPosition, newPos) < 5) {
+                        return;
+                    }
+
+                    userPosition = newPos;
+                    document.getElementById('gpsStatus').textContent = 'ACTIVE';
+
+                    if (userMarker) {
+                        userMarker.setLatLng(userPosition);
+                    } else {
+                        userMarker = L.marker(userPosition, {
+                            icon: L.divIcon({
+                                html: `<div style="background:#00d4ff;width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 0 20px rgba(0,212,255,0.8)"></div>`,
+                                iconSize: [20, 20],
+                                className: 'user-location-marker'
+                            }),
+                            zIndexOffset: 1000
+                        }).addTo(map);
+                        userMarker.bindPopup('<strong style="color:#00d4ff">YOUR LOCATION</strong>');
+                    }
+
+                    map.setView(userPosition, 14);
+                    checkProximity();
+                },
+                (err) => {
+                    document.getElementById('loading').classList.remove('active');
+                    document.getElementById('gpsStatus').textContent = 'ERROR';
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        }
+
+        function checkProximity() {
+            if (!userPosition) return;
+
+            let nearestDistance = Infinity;
+
+            accidentSpots.forEach((spot, index) => {
+                const distance = map.distance(userPosition, [spot[0], spot[1]]);
+
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                }
+
+                if (distance > 150 && distance < 500 && !alertShown[index]) {
+                    showAlert(`⚠️ ACCIDENT ZONE ${Math.round(distance)}m - REDUCE SPEED!`, 'danger');
+                    alertShown[index] = true;
+                    playSound();
+                }
+            });
+
+            document.getElementById('nearestDistance').textContent =
+                nearestDistance > 1000 ? Math.round(nearestDistance / 1000) + 'km' : Math.round(nearestDistance) + 'm';
+        }
+
+        function playSound() {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator(),
+                    gain = ctx.createGain();
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                osc.frequency.value = 880;
+                osc.type = 'sine';
+                gain.gain.setValueAtTime(0.3, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.5);
+            } catch (e) {
+                // Audio not supported
+            }
+        }
+
+        async function planRoute() {
+            if (!pickupCoords || !dropCoords) {
+                showAlert('Select both pickup and destination first', 'warning');
+                return;
+            }
+
+            showAlert('Calculating safe route...', 'warning');
+
+            try {
+                const response = await fetch(
+                    `https://router.project-osrm.org/route/v1/driving/${pickupCoords[1]},${pickupCoords[0]};${dropCoords[1]},${dropCoords[0]}?overview=full&geometries=geojson`
+                );
+                const data = await response.json();
+
+                if (data.code !== 'Ok' || !data.routes || data.routes.length === 0) {
+                    showAlert('Could not find route. Try different locations.', 'danger');
+                    return;
+                }
+
+                const route = data.routes[0];
+                displayRoute(route);
+            } catch (error) {
+                console.error('Routing error:', error);
+                showAlert('Error calculating route', 'danger');
+            }
+        }
+
+        function displayRoute(routeData) {
+            clearRoute();
+
+            const coords = routeData.geometry.coordinates.map(c => [c[1], c[0]]);
+
+            routeLayer = L.polyline(coords, {
+                color: '#00d4ff',
+                weight: 6,
+                opacity: 0.9,
+                dashArray: '10, 5',
+                lineJoin: 'round',
+                lineCap: 'round'
+            }).addTo(map);
+
+            pickupMarker = L.marker(pickupCoords, {
+                icon: L.divIcon({
+                    html: '<div style="background:#06ffa5;color:#0a0e27;padding:8px 12px;border-radius:8px;font-weight:bold;font-size:12px;white-space:nowrap">START</div>',
+                    iconSize: [70, 30],
+                    iconAnchor: [35, 15],
+                    className: 'start-marker'
+                })
+            }).addTo(map);
+
+            dropMarker = L.marker(dropCoords, {
+                icon: L.divIcon({
+                    html: '<div style="background:#ff006e;color:white;padding:8px 12px;border-radius:8px;font-weight:bold;font-size:12px;white-space:nowrap">END</div>',
+                    iconSize: [70, 30],
+                    iconAnchor: [35, 15],
+                    className: 'end-marker'
+                })
+            }).addTo(map);
+
+            map.fitBounds(L.latLngBounds(pickupCoords, dropCoords), { padding: [100, 100] });
+
+            const distanceKm = (routeData.distance / 1000).toFixed(2);
+            const durationMin = Math.round(routeData.duration / 60);
+
+            checkRouteForAccidents(coords);
+
+            const dangerColor = routeAccidentZones.length > 3 ? '#ff006e' : '#06ffa5';
+
+            document.getElementById('routeDetails').innerHTML = `
+                <div class="route-stats">
+                    <div class="route-stat-card">
+                        <div class="route-stat-icon">📏</div>
+                        <div class="route-stat-value">${distanceKm}</div>
+                        <div class="route-stat-label">KM</div>
+                    </div>
+                    <div class="route-stat-card">
+                        <div class="route-stat-icon">⏱️</div>
+                        <div class="route-stat-value">${durationMin}</div>
+                        <div class="route-stat-label">MIN</div>
+                    </div>
+                    <div class="route-stat-card" style="border-color:${dangerColor}">
+                        <div class="route-stat-icon">⚠️</div>
+                        <div class="route-stat-value" style="color:${dangerColor}">${routeAccidentZones.length}</div>
+                        <div class="route-stat-label">ZONES</div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('routeInfo').classList.add('active');
+
+            if (routeAccidentZones.length > 0) {
+                showAlert(`⚠️ ${routeAccidentZones.length} danger zones ahead - DRIVE SAFE!`, 'warning');
+            } else {
+                showAlert('✅ Route is SAFE - No danger zones!', 'success');
+            }
+        }
+
+        function checkRouteForAccidents(routeCoords) {
+            routeAccidentZones = [];
+
+            accidentSpots.forEach((spot, index) => {
+                const spotLatLng = L.latLng(spot[0], spot[1]);
+
+                for (let coord of routeCoords) {
+                    const distance = spotLatLng.distanceTo(L.latLng(coord));
+
+                    if (distance < 150) {
+                        routeAccidentZones.push(spot);
+                        const marker = accidentMarkers[index];
+                        if (marker) {
+                            marker.setStyle({ radius: 10, weight: 3, fillOpacity: 1 });
+                        }
+                        break;
+                    }
+                }
+            });
+        }
+
+        function clearRoute() {
+            if (routeLayer) {
+                map.removeLayer(routeLayer);
+                routeLayer = null;
+            }
+
+            if (pickupMarker) {
+                map.removeLayer(pickupMarker);
+                pickupMarker = null;
+            }
+
+            if (dropMarker) {
+                map.removeLayer(dropMarker);
+                dropMarker = null;
+            }
+
+            accidentMarkers.forEach(m => {
+                m.setStyle({ radius: 6, weight: 2, fillOpacity: 0.8 });
+            });
+
+            routeAccidentZones = [];
+            pickupCoords = null;
+            dropCoords = null;
+            document.getElementById('routeInfo').classList.remove('active');
+            showAlert('Route cleared', 'success');
+        }
+
+        function recenterMap() {
+            if (userPosition) {
+                map.setView(userPosition, 14);
+                showAlert('Centered on your location', 'success');
+            }
+        }
+
+        function toggleHeatmap() {
+            const btn = document.getElementById('heatmapBtnText');
+
+            if (map.hasLayer(heatmapLayer)) {
+                map.removeLayer(heatmapLayer);
+                btn.textContent = 'SHOW HEATMAP';
+            } else {
+                map.addLayer(heatmapLayer);
+                btn.textContent = 'HIDE HEATMAP';
+            }
+        }
+
+        function clearAlerts() {
+            document.getElementById('alertContainer').innerHTML = '';
+            alertShown = {};
+            showAlert('Alerts cleared', 'success');
+        }
+
+        function showAlert(msg, type = 'danger') {
+            const container = document.getElementById('alertContainer');
+            const id = 'alert-' + Date.now();
+
+            container.insertAdjacentHTML('beforeend', `
+                <div id="${id}" class="alert alert-${type}">
+                    ${msg}
+                    <button class="alert-close" onclick="document.getElementById('${id}').remove()">×</button>
+                </div>
+            `);
+
+            setTimeout(() => {
+                const el = document.getElementById(id);
+                if (el) el.remove();
+            }, 10000);
+        }
+
+        window.onload = initMap;
+
+        window.onbeforeunload = () => {
+            if (watchId) navigator.geolocation.clearWatch(watchId);
+        };
+    </script>
+</body>
+</html>
